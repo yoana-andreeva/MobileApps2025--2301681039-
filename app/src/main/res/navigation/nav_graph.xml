@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/dashboardFragment">
+
+    <fragment
+        android:id="@+id/dashboardFragment"
+        android:name="com.example.uniplanner.ui.dashboard.DashboardFragment"
+        android:label="Dashboard" />
+
+    <fragment
+        android:id="@+id/calendarFragment"
+        android:name="com.example.uniplanner.ui.calendar.CalendarFragment"
+        android:label="Calendar" />
+
+    <fragment
+        android:id="@+id/tasksFragment"
+        android:name="com.example.uniplanner.ui.tasks.TasksFragment"
+        android:label="Tasks" />
+
+    <fragment
+        android:id="@+id/addEditTaskFragment"
+        android:name="com.example.uniplanner.ui.tasks.AddEditTaskFragment"
+        android:label="Add Task" />
+
+    <fragment
+        android:id="@+id/subjectsFragment"
+        android:name="com.example.uniplanner.ui.subjects.SubjectsFragment"
+        android:label="Subjects" />
+
+</navigation>
