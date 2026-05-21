@@ -14,13 +14,13 @@
         app:navGraph="@navigation/nav_graph"
         app:defaultNavHost="true"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/bottomNavContаiner"
+        app:layout_constraintBottom_toTopOf="@id/bottomNavContainer"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- Заоблена Bottom Nav -->
     <androidx.cardview.widget.CardView
-        android:id="@+id/bottomNavContаiner"
+        android:id="@+id/bottomNavContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"

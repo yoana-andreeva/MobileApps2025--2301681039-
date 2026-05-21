@@ -1,14 +1,13 @@
 package com.example.uniplanner.ui.tasks
 
-import android.app.Activity
 import android.app.DatePickerDialog
-import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ArrayAdapter
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
@@ -16,6 +15,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import coil.load
+import com.example.uniplanner.R
 import com.example.uniplanner.data.local.entity.Priority
 import com.example.uniplanner.data.local.entity.Task
 import com.example.uniplanner.databinding.FragmentAddEditTaskBinding
@@ -42,15 +42,20 @@ class AddEditTaskFragment : Fragment() {
     private var selectedSubjectId: Long = -1L
     private var photoUri: Uri? = null
     private var photoPath: String? = null
+    private var photoFile: File? = null // Пазим обекта на файла локално за по-сигурен път
 
+    // Контракт за стартиране на камерата и обработка на резултата
     private val takePicture = registerForActivityResult(
         ActivityResultContracts.TakePicture()
     ) { success ->
         if (success) {
-            photoUri?.let {
-                binding.ivTaskImage.visibility = View.VISIBLE
-                binding.ivTaskImage.load(it)
-                photoPath = photoUri?.path
+            photoUri?.let { uri ->
+                // Показваме MaterialCard контейнера от новия заоблен дизайн
+                binding.cardImageContainer.visibility = View.VISIBLE
+                binding.ivTaskImage.load(uri) // Coil зарежда снимката асинхронно
+
+                // Използваме абсолютния физически път към кеша за Room базата данни
+                photoPath = photoFile?.absolutePath
             }
         }
     }
@@ -76,7 +81,7 @@ class AddEditTaskFragment : Fragment() {
     private fun setupSubjectDropdown() {
         viewLifecycleOwner.lifecycleScope.launch {
             subjectViewModel.subjects.collect { subjects ->
-                val adapter = android.widget.ArrayAdapter(
+                val adapter = ArrayAdapter(
                     requireContext(),
                     android.R.layout.simple_dropdown_item_1line,
                     subjects.map { it.name }
@@ -84,6 +89,8 @@ class AddEditTaskFragment : Fragment() {
                 binding.spinnerSubject.setAdapter(adapter)
                 binding.spinnerSubject.setOnItemClickListener { _, _, position, _ ->
                     selectedSubjectId = subjects[position].id
+                    // Изчистваме грешката при успешно избиране
+                    binding.spinnerSubject.error = null
                 }
             }
         }
@@ -109,23 +116,34 @@ class AddEditTaskFragment : Fragment() {
 
     private fun setupCamera() {
         binding.btnPickImage.setOnClickListener {
-            val photoFile = File.createTempFile(
-                "task_image_", ".jpg",
-                requireContext().cacheDir
-            )
-            photoPath = photoFile.absolutePath
-            photoUri = FileProvider.getUriForFile(
-                requireContext(),
-                "${requireContext().packageName}.provider",
-                photoFile
-            )
-            takePicture.launch(photoUri)
+            try {
+                // Създаваме временен файл в сигурната кеш директория на UniPlanner
+                val tempFile = File.createTempFile(
+                    "task_image_", ".jpg",
+                    requireContext().cacheDir
+                )
+                photoFile = tempFile
+
+                // Генерираме защитено споделено URI чрез твоя FileProvider
+                photoUri = FileProvider.getUriForFile(
+                    requireContext(),
+                    "${requireContext().packageName}.provider",
+                    tempFile
+                )
+
+                // Стартираме системната камера
+                takePicture.launch(photoUri)
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), "Грешка при стартиране на камерата", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
     private fun setupSaveButton() {
         binding.btnSave.setOnClickListener {
             val title = binding.etTitle.text.toString().trim()
+
+            // Валидация на задължителните полета
             if (title.isEmpty()) {
                 binding.etTitle.error = "Заглавието е задължително"
                 return@setOnClickListener
@@ -135,12 +153,14 @@ class AddEditTaskFragment : Fragment() {
                 return@setOnClickListener
             }
 
+            // Извличане на избрания приоритет от Material 3 ChipGroup
             val priority = when (binding.chipGroupPriority.checkedChipId) {
                 binding.chipLow.id -> Priority.LOW
                 binding.chipHigh.id -> Priority.HIGH
-                else -> Priority.MEDIUM
+                else -> Priority.MEDIUM // По подразбиране
             }
 
+            // Създаваме новия обект за базата данни
             val task = Task(
                 title = title,
                 description = binding.etDescription.text.toString().trim(),
@@ -150,7 +170,10 @@ class AddEditTaskFragment : Fragment() {
                 imagePath = photoPath
             )
 
+            // Записваме през ViewModel (това автоматично пуска и WorkManager нотификацията!)
             taskViewModel.insertTask(task)
+
+            // Връщаме се обратно в предишния фрагмент (Dashboard или Tasks)
             findNavController().navigateUp()
         }
     }

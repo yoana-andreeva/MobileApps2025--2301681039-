@@ -13,12 +13,19 @@ import javax.inject.Singleton
 class NotificationScheduler @Inject constructor(
     private val context: Context
 ) {
-    // Колко рано да се изпрати нотификацията (по подразбиране 1 час)
-    private val reminderOffsetMs = 60 * 60 * 1000L
+    // Взимаме SharedPreferences на приложението
+    private val sharedPreferences = context.getSharedPreferences("uniplanner_prefs", Context.MODE_PRIVATE)
+
+    // Метод, който изчислява динамично offset-а в милисекунди
+    private fun getReminderOffsetMs(): Long {
+        val hours = sharedPreferences.getInt("reminder_hours", 1) // 1 час по подразбиране
+        return hours * 60 * 60 * 1000L
+    }
 
     fun scheduleReminder(task: Task) {
-        val delay = task.deadline - System.currentTimeMillis() - reminderOffsetMs
-        if (delay <= 0) return // вече е минал срокът
+        // Използваме динамичния offset тук
+        val delay = task.deadline - System.currentTimeMillis() - getReminderOffsetMs()
+        if (delay <= 0) return // Вече е минал срокът или е твърде късно за напомняне
 
         val data = Data.Builder()
             .putString(TaskReminderWorker.KEY_TASK_TITLE, task.title)

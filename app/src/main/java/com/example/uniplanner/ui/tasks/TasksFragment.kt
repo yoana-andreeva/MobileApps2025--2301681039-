@@ -14,6 +14,7 @@ import com.example.uniplanner.data.local.entity.TaskStatus
 import com.example.uniplanner.databinding.FragmentTasksBinding
 import com.example.uniplanner.ui.adapter.TaskAdapter
 import com.example.uniplanner.ui.viewmodel.TaskViewModel
+import com.example.uniplanner.ui.viewmodel.SubjectViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import androidx.recyclerview.widget.ItemTouchHelper
@@ -25,7 +26,9 @@ class TasksFragment : Fragment() {
 
     private var _binding: FragmentTasksBinding? = null
     private val binding get() = _binding!!
+
     private val taskViewModel: TaskViewModel by viewModels()
+    private val subjectViewModel: SubjectViewModel by viewModels() // Добавено за цветовете на картите
     private lateinit var taskAdapter: TaskAdapter
 
     override fun onCreateView(
@@ -40,20 +43,8 @@ class TasksFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        taskAdapter = TaskAdapter(
-            onTaskChecked = { task, isChecked ->
-                val status = if (isChecked) TaskStatus.DONE else TaskStatus.PENDING
-                taskViewModel.updateTaskStatus(task, status)
-            },
-            onTaskClicked = { },
-            onTaskDeleted = { task -> taskViewModel.deleteTask(task) }
-
-        )
-
-        binding.rvTasks.layoutManager = LinearLayoutManager(requireContext())
-        binding.rvTasks.adapter = taskAdapter
-
-        observeTasks()
+        setupRecyclerView()
+        observeData()
         setupSwipeToDelete()
 
         binding.fabAddTask.setOnClickListener {
@@ -61,17 +52,38 @@ class TasksFragment : Fragment() {
         }
     }
 
-    private fun observeTasks() {
+    private fun setupRecyclerView() {
+        taskAdapter = TaskAdapter(
+            subjectColors = emptyMap(),
+            subjectNames = emptyMap(),
+            onTaskChecked = { task, isChecked ->
+                val status = if (isChecked) TaskStatus.DONE else TaskStatus.PENDING
+                taskViewModel.updateTaskStatus(task, status)
+            },
+            onTaskClicked = { /* Оставяме празно за бъдеща детайлна редакция */ },
+            onTaskDeleted = { task -> taskViewModel.deleteTask(task) }
+        )
+
+        binding.rvTasks.layoutManager = LinearLayoutManager(requireContext())
+        binding.rvTasks.adapter = taskAdapter
+    }
+
+    private fun observeData() {
+        // 1. Следим за промени в предметите и обновяваме маповете в адаптера
+        viewLifecycleOwner.lifecycleScope.launch {
+            subjectViewModel.subjects.collect { subjectsList ->
+                val colorMap = subjectsList.associate { it.id to it.color }
+                val nameMap = subjectsList.associate { it.id to it.name }
+                taskAdapter.updateSubjectData(colorMap, nameMap)
+            }
+        }
+
+        // 2. Следим за промени в задачите (пълен списък)
         viewLifecycleOwner.lifecycleScope.launch {
             taskViewModel.allTasks.collect { tasks ->
                 taskAdapter.submitList(tasks)
             }
         }
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
     }
 
     private fun setupSwipeToDelete() {
@@ -87,6 +99,7 @@ class TasksFragment : Fragment() {
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
                 val task = taskAdapter.currentList[viewHolder.adapterPosition]
                 taskViewModel.deleteTask(task)
+
                 Snackbar.make(
                     binding.root,
                     "\"${task.title}\" изтрита",
@@ -97,5 +110,10 @@ class TasksFragment : Fragment() {
             }
         }
         ItemTouchHelper(swipeCallback).attachToRecyclerView(binding.rvTasks)
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 }

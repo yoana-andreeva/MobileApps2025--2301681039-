@@ -3,6 +3,7 @@ package com.example.uniplanner.ui.adapter
 import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.core.graphics.ColorUtils
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -15,10 +16,19 @@ import java.util.Date
 import java.util.Locale
 
 class TaskAdapter(
+    private var subjectColors: Map<Long, Int> = emptyMap(),
+    private var subjectNames: Map<Long, String> = emptyMap(),
     private val onTaskChecked: (Task, Boolean) -> Unit,
     private val onTaskClicked: (Task) -> Unit,
     private val onTaskDeleted: (Task) -> Unit
 ) : ListAdapter<Task, TaskAdapter.TaskViewHolder>(TaskDiffCallback()) {
+
+    // Метод за динамично обновяване на данните за предметите от фрагментите
+    fun updateSubjectData(colors: Map<Long, Int>, names: Map<Long, String>) {
+        this.subjectColors = colors
+        this.subjectNames = names
+        notifyDataSetChanged() // Преначертава списъка с новите визуални стилове
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TaskViewHolder {
         val binding = ItemTaskBinding.inflate(
@@ -36,34 +46,53 @@ class TaskAdapter(
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(task: Task) {
-            binding.tvTaskTitle.text = task.title
+            // 1. Заглавие на задачата + Динамична проверка за прикачена снимка (Критерий за 6-ца)
+            if (!task.imagePath.isNullOrEmpty()) {
+                binding.tvTaskTitle.text = "${task.title} 📷"
+            } else {
+                binding.tvTaskTitle.text = task.title
+            }
 
+            // 2. Форматиране на крайния срок
             val formatter = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
             binding.tvTaskDeadline.text = "📅 ${formatter.format(Date(task.deadline))}"
 
-            // Цвят според приоритет
+            // 3. Динамично пастелно оцветяване на картата според предмета
+            val subjectColor = subjectColors[task.subjectId] ?: Color.WHITE
+            // Задаваме алфа прозрачност 40 (от общо 255) за нежен пастелен нюанс
+            val pastelColor = ColorUtils.setAlphaComponent(subjectColor, 40)
+            binding.root.setCardBackgroundColor(pastelColor)
+
+            // 4. Поставяне на името на предмета в картата
+            val subjectName = subjectNames[task.subjectId] ?: "Няма предмет"
+            binding.tvTaskSubject.text = "📚 $subjectName"
+
+            // 5. Цвят на тънкия ляв кант според приоритета (Material 3 палитра)
             val priorityColor = when (task.priority) {
-                Priority.HIGH -> Color.parseColor("#EF5350")
-                Priority.MEDIUM -> Color.parseColor("#FFA726")
-                Priority.LOW -> Color.parseColor("#66BB6A")
+                Priority.HIGH -> Color.parseColor("#FF6B6B")   // Свежо червено
+                Priority.MEDIUM -> Color.parseColor("#FFB347") // Топло оранжево
+                Priority.LOW -> Color.parseColor("#4CAF82")    // Градинско зелено
             }
             binding.priorityIndicator.setBackgroundColor(priorityColor)
 
-            // Статус
+            // 6. Управление на статуса (CheckBox)
+            // Първо зануляваме лисънъра, за да предотвратим грешно тригърване при скролване (RecyclerView bug prevention)
+            binding.cbTaskDone.setOnCheckedChangeListener(null)
             binding.cbTaskDone.isChecked = task.status == TaskStatus.DONE
+
             binding.cbTaskDone.setOnCheckedChangeListener { _, isChecked ->
                 onTaskChecked(task, isChecked)
             }
 
+            // 7. Клик върху цялата карта (за преглед или редакция)
             binding.root.setOnClickListener { onTaskClicked(task) }
-
-            // Swipe to delete — ще добавим после
         }
     }
 
     class TaskDiffCallback : DiffUtil.ItemCallback<Task>() {
         override fun areItemsTheSame(oldItem: Task, newItem: Task) =
             oldItem.id == newItem.id
+
         override fun areContentsTheSame(oldItem: Task, newItem: Task) =
             oldItem == newItem
     }

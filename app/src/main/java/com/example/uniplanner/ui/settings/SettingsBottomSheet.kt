@@ -1,5 +1,6 @@
 package com.example.uniplanner.ui.settings
 
+import android.content.Context
 import android.content.res.Configuration
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -32,11 +33,11 @@ class SettingsBottomSheet : BottomSheetDialogFragment() {
         super.onViewCreated(view, savedInstanceState)
 
         setupThemeSelector()
+        setupReminderSelector() // Новата функция за управление на нотификациите
         setupClearButton()
     }
 
     private fun setupThemeSelector() {
-        // Покажи текущата тема
         when (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) {
             Configuration.UI_MODE_NIGHT_YES -> binding.chipDark.isChecked = true
             Configuration.UI_MODE_NIGHT_NO -> binding.chipLight.isChecked = true
@@ -46,18 +47,38 @@ class SettingsBottomSheet : BottomSheetDialogFragment() {
         binding.chipGroupTheme.setOnCheckedStateChangeListener { _, checkedIds ->
             when {
                 checkedIds.contains(binding.chipLight.id) ->
-                    AppCompatDelegate.setDefaultNightMode(
-                        AppCompatDelegate.MODE_NIGHT_NO
-                    )
+                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
                 checkedIds.contains(binding.chipDark.id) ->
-                    AppCompatDelegate.setDefaultNightMode(
-                        AppCompatDelegate.MODE_NIGHT_YES
-                    )
+                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
                 else ->
-                    AppCompatDelegate.setDefaultNightMode(
-                        AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
-                    )
+                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
             }
+        }
+    }
+
+    private fun setupReminderSelector() {
+        val sharedPrefs = requireContext().getSharedPreferences("uniplanner_prefs", Context.MODE_PRIVATE)
+
+        // Зареждаме последно записаната настройка (по подразбиране 1 час)
+        val currentSavedHours = sharedPrefs.getInt("reminder_hours", 1)
+
+        // Маркираме правилния Chip спрямо записаното в паметта
+        when (currentSavedHours) {
+            1 -> binding.chipReminder1h.isChecked = true
+            3 -> binding.chipReminder3h.isChecked = true
+            24 -> binding.chipReminder1d.isChecked = true
+        }
+
+        // Слушател: записваме промяната веднага щом потребителят кликне друг Chip
+        binding.chipGroupReminder.setOnCheckedStateChangeListener { _, checkedIds ->
+            val hoursToSave = when {
+                checkedIds.contains(binding.chipReminder1h.id) -> 1
+                checkedIds.contains(binding.chipReminder3h.id) -> 3
+                checkedIds.contains(binding.chipReminder1d.id) -> 24
+                else -> 1
+            }
+
+            sharedPrefs.edit().putInt("reminder_hours", hoursToSave).apply()
         }
     }
 

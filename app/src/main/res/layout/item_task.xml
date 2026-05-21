@@ -4,57 +4,76 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="8dp"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="2dp">
+    android:layout_marginBottom="12dp"
+    android:layout_marginHorizontal="2dp"
+    app:cardCornerRadius="20dp"
+    app:cardElevation="0dp"
+    app:strokeWidth="0dp"
+    app:cardBackgroundColor="@color/surface">
 
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="12dp"
-        android:gravity="center_vertical">
+        android:padding="16dp">
 
         <View
             android:id="@+id/priorityIndicator"
-            android:layout_width="4dp"
-            android:layout_height="48dp"
-            android:layout_marginEnd="12dp" />
+            android:layout_width="5dp"
+            android:layout_height="0dp"
+            android:background="@color/primary"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
 
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:layout_marginStart="14dp"
+            android:layout_marginEnd="8dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toEndOf="@id/priorityIndicator"
+            app:layout_constraintEnd_toStartOf="@id/cbTaskDone">
 
             <TextView
                 android:id="@+id/tvTaskTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/tvTaskDeadline"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textSize="12sp"
-                android:layout_marginTop="4dp" />
+                android:text="Курсов проект Android"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:fontFamily="@font/poppins"
+                android:textColor="@color/text_primary" />
 
             <TextView
                 android:id="@+id/tvTaskSubject"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:text="📚 Мобилни Приложения"
                 android:textSize="12sp"
-                android:layout_marginTop="2dp" />
+                android:layout_marginTop="4dp"
+                android:fontFamily="@font/poppins"
+                android:textColor="@color/text_secondary" />
 
+            <TextView
+                android:id="@+id/tvTaskDeadline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="⏰ Днес, 23:59 ч."
+                android:textSize="11sp"
+                android:layout_marginTop="4dp"
+                android:fontFamily="@font/poppins"
+                android:textColor="@color/priority_high" />
         </LinearLayout>
 
-        <CheckBox
+        <com.google.android.material.checkbox.MaterialCheckBox
             android:id="@+id/cbTaskDone"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
 
-    </LinearLayout>
-
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </com.google.android.material.card.MaterialCardView>
