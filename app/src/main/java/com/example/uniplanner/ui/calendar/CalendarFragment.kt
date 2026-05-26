@@ -113,7 +113,7 @@ class CalendarFragment : Fragment() {
                 }.toSet()
 
                 binding.calendarView.addDecorator(
-                    TaskDotDecorator(dates, Color.parseColor("#4CAF82"))
+                    TaskDotDecorator(dates, Color.parseColor("#7DA8E6"))
                 )
             }
         }

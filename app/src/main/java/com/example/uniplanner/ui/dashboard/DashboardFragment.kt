@@ -18,7 +18,6 @@ import com.example.uniplanner.data.local.entity.Subject
 import com.example.uniplanner.data.local.entity.TaskStatus
 import com.example.uniplanner.databinding.FragmentDashboardBinding
 import com.example.uniplanner.ui.adapter.TaskAdapter
-import com.example.uniplanner.ui.adapter.UpcomingTaskAdapter
 import com.example.uniplanner.ui.viewmodel.SubjectViewModel
 import com.example.uniplanner.ui.viewmodel.TaskViewModel
 import com.google.android.material.chip.Chip
@@ -37,7 +36,6 @@ class DashboardFragment : Fragment() {
     private val taskViewModel: TaskViewModel by viewModels()
     private val subjectViewModel: SubjectViewModel by viewModels()
     private lateinit var taskAdapter: TaskAdapter
-    private lateinit var upcomingAdapter: UpcomingTaskAdapter
     private var selectedSubjectId: Long? = null
 
     override fun onCreateView(
@@ -86,14 +84,6 @@ class DashboardFragment : Fragment() {
         )
         binding.rvUpcomingTasks.layoutManager = LinearLayoutManager(requireContext())
         binding.rvUpcomingTasks.adapter = taskAdapter
-
-        upcomingAdapter = UpcomingTaskAdapter()
-        binding.rvUpcomingDeadlines.layoutManager = LinearLayoutManager(
-            requireContext(),
-            LinearLayoutManager.HORIZONTAL,
-            false
-        )
-        binding.rvUpcomingDeadlines.adapter = upcomingAdapter
     }
 
     private fun observeData() {
@@ -102,7 +92,6 @@ class DashboardFragment : Fragment() {
                 val colorMap = subjectsList.associate { it.id to it.color }
                 val nameMap = subjectsList.associate { it.id to it.name }
                 taskAdapter.updateSubjectData(colorMap, nameMap)
-                upcomingAdapter.updateSubjectData(nameMap, colorMap)
                 setupSubjectChips(subjectsList)
             }
         }
@@ -119,18 +108,6 @@ class DashboardFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             taskViewModel.pendingTasks.collect { tasks ->
                 filterAndSubmitTasks(tasks)
-
-                val threeDaysFromNow = System.currentTimeMillis() + 3 * 24 * 60 * 60 * 1000L
-                val upcoming = tasks
-                    .filter { it.deadline <= threeDaysFromNow }
-                    .sortedBy { it.deadline }
-
-                binding.tvUpcomingDeadlines.visibility =
-                    if (upcoming.isEmpty()) View.GONE else View.VISIBLE
-                binding.rvUpcomingDeadlines.visibility =
-                    if (upcoming.isEmpty()) View.GONE else View.VISIBLE
-
-                upcomingAdapter.submitList(upcoming)
             }
         }
     }
@@ -188,7 +165,7 @@ class DashboardFragment : Fragment() {
 
                 if (isToday) {
                     setBackgroundResource(R.drawable.today_circle)
-                    setTextColor(android.graphics.Color.parseColor("#4CAF82"))
+                    setTextColor(android.graphics.Color.parseColor("#A1C5FA"))
                 } else {
                     setTextColor(android.graphics.Color.WHITE)
                 }

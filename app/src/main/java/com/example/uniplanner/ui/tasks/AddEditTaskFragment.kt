@@ -40,21 +40,18 @@ class AddEditTaskFragment : Fragment() {
 
     private var selectedDeadline: Long = System.currentTimeMillis()
     private var selectedSubjectId: Long = -1L
+    private var taskToEdit: Long = -1L
     private var photoUri: Uri? = null
     private var photoPath: String? = null
-    private var photoFile: File? = null // Пазим обекта на файла локално за по-сигурен път
+    private var photoFile: File? = null
 
-    // Контракт за стартиране на камерата и обработка на резултата
     private val takePicture = registerForActivityResult(
         ActivityResultContracts.TakePicture()
     ) { success ->
         if (success) {
             photoUri?.let { uri ->
-                // Показваме MaterialCard контейнера от новия заоблен дизайн
                 binding.cardImageContainer.visibility = View.VISIBLE
-                binding.ivTaskImage.load(uri) // Coil зарежда снимката асинхронно
-
-                // Използваме абсолютния физически път към кеша за Room базата данни
+                binding.ivTaskImage.load(uri)
                 photoPath = photoFile?.absolutePath
             }
         }
@@ -72,10 +69,49 @@ class AddEditTaskFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        taskToEdit = arguments?.getLong("taskId", -1L) ?: -1L
+
+        if (taskToEdit != -1L) {
+            // Edit режим
+            binding.tvScreenTitle.text = "Редактирай задача"
+            binding.btnSave.text = "Запази промените"
+            loadTaskForEdit(taskToEdit)
+        } else {
+            // Create режим
+            binding.tvScreenTitle.text = "Нова задача"
+            binding.btnSave.text = "Създай задача"
+        }
+
         setupSubjectDropdown()
         setupDatePicker()
         setupCamera()
         setupSaveButton()
+    }
+
+    private fun loadTaskForEdit(taskId: Long) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val task = taskViewModel.getTaskById(taskId) ?: return@launch
+
+            binding.etTitle.setText(task.title)
+            binding.etDescription.setText(task.description)
+            selectedDeadline = task.deadline
+            selectedSubjectId = task.subjectId
+            photoPath = task.imagePath
+
+            val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+            binding.etDeadline.setText(formatter.format(Date(task.deadline)))
+
+            when (task.priority) {
+                Priority.LOW -> binding.chipLow.isChecked = true
+                Priority.HIGH -> binding.chipHigh.isChecked = true
+                else -> binding.chipMedium.isChecked = true
+            }
+
+            if (!task.imagePath.isNullOrEmpty()) {
+                binding.cardImageContainer.visibility = View.VISIBLE
+                binding.ivTaskImage.load(task.imagePath)
+            }
+        }
     }
 
     private fun setupSubjectDropdown() {
@@ -87,9 +123,18 @@ class AddEditTaskFragment : Fragment() {
                     subjects.map { it.name }
                 )
                 binding.spinnerSubject.setAdapter(adapter)
+
+                // Ако редактираме — покажи текущия предмет
+                if (taskToEdit != -1L) {
+                    val task = taskViewModel.getTaskById(taskToEdit)
+                    val subjectIndex = subjects.indexOfFirst { it.id == task?.subjectId }
+                    if (subjectIndex >= 0) {
+                        binding.spinnerSubject.setText(subjects[subjectIndex].name, false)
+                    }
+                }
+
                 binding.spinnerSubject.setOnItemClickListener { _, _, position, _ ->
                     selectedSubjectId = subjects[position].id
-                    // Изчистваме грешката при успешно избиране
                     binding.spinnerSubject.error = null
                 }
             }
@@ -117,24 +162,23 @@ class AddEditTaskFragment : Fragment() {
     private fun setupCamera() {
         binding.btnPickImage.setOnClickListener {
             try {
-                // Създаваме временен файл в сигурната кеш директория на UniPlanner
                 val tempFile = File.createTempFile(
                     "task_image_", ".jpg",
                     requireContext().cacheDir
                 )
                 photoFile = tempFile
-
-                // Генерираме защитено споделено URI чрез твоя FileProvider
                 photoUri = FileProvider.getUriForFile(
                     requireContext(),
                     "${requireContext().packageName}.provider",
                     tempFile
                 )
-
-                // Стартираме системната камера
                 takePicture.launch(photoUri)
             } catch (e: Exception) {
-                Toast.makeText(requireContext(), "Грешка при стартиране на камерата", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    requireContext(),
+                    "Грешка при стартиране на камерата",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
@@ -143,7 +187,6 @@ class AddEditTaskFragment : Fragment() {
         binding.btnSave.setOnClickListener {
             val title = binding.etTitle.text.toString().trim()
 
-            // Валидация на задължителните полета
             if (title.isEmpty()) {
                 binding.etTitle.error = "Заглавието е задължително"
                 return@setOnClickListener
@@ -153,28 +196,38 @@ class AddEditTaskFragment : Fragment() {
                 return@setOnClickListener
             }
 
-            // Извличане на избрания приоритет от Material 3 ChipGroup
             val priority = when (binding.chipGroupPriority.checkedChipId) {
                 binding.chipLow.id -> Priority.LOW
                 binding.chipHigh.id -> Priority.HIGH
-                else -> Priority.MEDIUM // По подразбиране
+                else -> Priority.MEDIUM
             }
 
-            // Създаваме новия обект за базата данни
-            val task = Task(
-                title = title,
-                description = binding.etDescription.text.toString().trim(),
-                subjectId = selectedSubjectId,
-                deadline = selectedDeadline,
-                priority = priority,
-                imagePath = photoPath
-            )
-
-            // Записваме през ViewModel (това автоматично пуска и WorkManager нотификацията!)
-            taskViewModel.insertTask(task)
-
-            // Връщаме се обратно в предишния фрагмент (Dashboard или Tasks)
-            findNavController().navigateUp()
+            if (taskToEdit != -1L) {
+                viewLifecycleOwner.lifecycleScope.launch {
+                    val existing = taskViewModel.getTaskById(taskToEdit) ?: return@launch
+                    val updated = existing.copy(
+                        title = title,
+                        description = binding.etDescription.text.toString().trim(),
+                        subjectId = selectedSubjectId,
+                        deadline = selectedDeadline,
+                        priority = priority,
+                        imagePath = photoPath ?: existing.imagePath
+                    )
+                    taskViewModel.updateTask(updated)
+                    findNavController().navigateUp()
+                }
+            } else {
+                val task = Task(
+                    title = title,
+                    description = binding.etDescription.text.toString().trim(),
+                    subjectId = selectedSubjectId,
+                    deadline = selectedDeadline,
+                    priority = priority,
+                    imagePath = photoPath
+                )
+                taskViewModel.insertTask(task)
+                findNavController().navigateUp()
+            }
         }
     }
 

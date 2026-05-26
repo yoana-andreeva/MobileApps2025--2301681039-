@@ -20,6 +20,7 @@ class TaskViewModel @Inject constructor(
     private val notificationScheduler: NotificationScheduler
 ) : ViewModel() {
 
+    suspend fun getTaskById(id: Long): Task? = repository.getTaskById(id)
     val allTasks: StateFlow<List<Task>> = repository.getAllTasks()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 

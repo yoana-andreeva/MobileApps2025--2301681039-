@@ -95,6 +95,10 @@ class TaskAdapter(
                 else
                     Color.parseColor("#9095A6")
             )
+
+            binding.btnEditTask.setOnClickListener {
+                onTaskClicked(task)
+            }
         }
     }
 

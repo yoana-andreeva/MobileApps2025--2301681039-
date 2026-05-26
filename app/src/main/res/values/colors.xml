@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Primary — зелено -->
-    <color name="primary">#4CAF82</color>
-    <color name="primary_dark">#2E7D5A</color>
+    <!-- Primary — -->
+    <color name="primary">#A1C5FA</color>
+    <color name="primary_dark">#7DA8E6</color>
     <color name="primary_container">#E8F5EE</color>
 
-    <!-- Secondary — лилаво -->
-    <color name="secondary">#9B8EC4</color>
+    <!-- Secondary — -->
+    <color name="secondary">#A1C5FA</color>
     <color name="secondary_container">#EDE9F8</color>
 
     <!-- Backgrounds -->
@@ -42,7 +42,7 @@
     <color name="card_pending">#FFF8E7</color>
 
     <!-- Bottom Nav -->
-    <color name="bottom_nav_bg">#1A1A2E</color>
-    <color name="bottom_nav_selected">#4CAF82</color>
-    <color name="bottom_nav_unselected">#6B7280</color>
+    <color name="bottom_nav_bg">#F0F4FF</color>
+    <color name="bottom_nav_selected">#A1C5FA</color>
+    <color name="bottom_nav_unselected">#9095A6</color>
 </resources>
