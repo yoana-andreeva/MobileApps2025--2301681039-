@@ -1,11 +1,12 @@
 package com.example.uniplanner.ui.dashboard
 
 import android.content.res.ColorStateList
-import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.core.graphics.ColorUtils
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -17,11 +18,15 @@ import com.example.uniplanner.data.local.entity.Subject
 import com.example.uniplanner.data.local.entity.TaskStatus
 import com.example.uniplanner.databinding.FragmentDashboardBinding
 import com.example.uniplanner.ui.adapter.TaskAdapter
-import com.example.uniplanner.ui.viewmodel.TaskViewModel
+import com.example.uniplanner.ui.adapter.UpcomingTaskAdapter
 import com.example.uniplanner.ui.viewmodel.SubjectViewModel
+import com.example.uniplanner.ui.viewmodel.TaskViewModel
 import com.google.android.material.chip.Chip
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 
 @AndroidEntryPoint
 class DashboardFragment : Fragment() {
@@ -32,8 +37,7 @@ class DashboardFragment : Fragment() {
     private val taskViewModel: TaskViewModel by viewModels()
     private val subjectViewModel: SubjectViewModel by viewModels()
     private lateinit var taskAdapter: TaskAdapter
-
-    // Пазим текущо избрания предмет за филтриране (null означава "Всички")
+    private lateinit var upcomingAdapter: UpcomingTaskAdapter
     private var selectedSubjectId: Long? = null
 
     override fun onCreateView(
@@ -50,9 +54,22 @@ class DashboardFragment : Fragment() {
 
         setupRecyclerView()
         observeData()
+        setupCalendarStrip()
 
-        binding.fabAddTask.setOnClickListener {
-            findNavController().navigate(R.id.addEditTaskFragment)
+        binding.cardCalendarStrip.setOnClickListener {
+            findNavController().navigate(R.id.calendarFragment)
+        }
+
+        binding.cardCompleted.setOnClickListener {
+            val done = taskViewModel.allTasks.value.filter { it.status == TaskStatus.DONE }
+            taskAdapter.submitList(done)
+            binding.tvUpcomingTitle.text = "Изпълнени задачи ✅"
+        }
+
+        binding.cardPending.setOnClickListener {
+            val pending = taskViewModel.pendingTasks.value
+            taskAdapter.submitList(pending)
+            binding.tvUpcomingTitle.text = "Предстоящи задачи"
         }
     }
 
@@ -64,50 +81,128 @@ class DashboardFragment : Fragment() {
                 val status = if (isChecked) TaskStatus.DONE else TaskStatus.PENDING
                 taskViewModel.updateTaskStatus(task, status)
             },
-            onTaskClicked = { /* За преглед/редакция */ },
+            onTaskClicked = { },
             onTaskDeleted = { task -> taskViewModel.deleteTask(task) }
         )
         binding.rvUpcomingTasks.layoutManager = LinearLayoutManager(requireContext())
         binding.rvUpcomingTasks.adapter = taskAdapter
+
+        upcomingAdapter = UpcomingTaskAdapter()
+        binding.rvUpcomingDeadlines.layoutManager = LinearLayoutManager(
+            requireContext(),
+            LinearLayoutManager.HORIZONTAL,
+            false
+        )
+        binding.rvUpcomingDeadlines.adapter = upcomingAdapter
     }
 
     private fun observeData() {
-        // 1. Следим предметите, за да генерираме чиповете и да дадем цвят на задачите
         viewLifecycleOwner.lifecycleScope.launch {
             subjectViewModel.subjects.collect { subjectsList ->
                 val colorMap = subjectsList.associate { it.id to it.color }
                 val nameMap = subjectsList.associate { it.id to it.name }
                 taskAdapter.updateSubjectData(colorMap, nameMap)
-
-                // Генерираме динамичните чипове най-отгоре
+                upcomingAdapter.updateSubjectData(nameMap, colorMap)
                 setupSubjectChips(subjectsList)
             }
         }
 
-        // 2. Статистика за горните две карти (Изпълнени/Изчакващи)
         viewLifecycleOwner.lifecycleScope.launch {
             taskViewModel.allTasks.collect { allTasks ->
                 val completedCount = allTasks.count { it.status == TaskStatus.DONE }
                 val pendingCount = allTasks.count { it.status != TaskStatus.DONE }
-
                 binding.tvCountCompleted.text = completedCount.toString()
                 binding.tvCountPending.text = pendingCount.toString()
             }
         }
 
-        // 3. Зареждаме и филтрираме активните задачи в реално време
         viewLifecycleOwner.lifecycleScope.launch {
             taskViewModel.pendingTasks.collect { tasks ->
                 filterAndSubmitTasks(tasks)
+
+                val threeDaysFromNow = System.currentTimeMillis() + 3 * 24 * 60 * 60 * 1000L
+                val upcoming = tasks
+                    .filter { it.deadline <= threeDaysFromNow }
+                    .sortedBy { it.deadline }
+
+                binding.tvUpcomingDeadlines.visibility =
+                    if (upcoming.isEmpty()) View.GONE else View.VISIBLE
+                binding.rvUpcomingDeadlines.visibility =
+                    if (upcoming.isEmpty()) View.GONE else View.VISIBLE
+
+                upcomingAdapter.submitList(upcoming)
             }
         }
     }
 
-    // Метод за динамично създаване на Material 3 чипове
+    private fun setupCalendarStrip() {
+        val calendar = Calendar.getInstance()
+        val monthFormatter = SimpleDateFormat("MMMM yyyy", Locale.getDefault())
+        binding.tvCalendarMonth.text = "${monthFormatter.format(calendar.time)} ›"
+
+        calendar.set(Calendar.DAY_OF_WEEK, calendar.firstDayOfWeek)
+
+        val dayNames = listOf("Нд", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб")
+        val today = Calendar.getInstance().get(Calendar.DAY_OF_MONTH)
+
+        binding.llWeekDays.removeAllViews()
+
+        repeat(7) { i ->
+            val dayCalendar = calendar.clone() as Calendar
+            dayCalendar.add(Calendar.DAY_OF_WEEK, i)
+            val dayNum = dayCalendar.get(Calendar.DAY_OF_MONTH)
+            val dayName = dayNames[dayCalendar.get(Calendar.DAY_OF_WEEK) - 1]
+            val isToday = dayNum == today
+
+            val dayView = LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = android.view.Gravity.CENTER
+                layoutParams = LinearLayout.LayoutParams(
+                    0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f
+                )
+            }
+
+            val dayNameView = TextView(requireContext()).apply {
+                text = dayName
+                textSize = 11f
+                setTextColor(
+                    if (isToday) android.graphics.Color.WHITE
+                    else android.graphics.Color.parseColor("#CCFFFFFF")
+                )
+                gravity = android.view.Gravity.CENTER
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            }
+
+            val dayNumView = TextView(requireContext()).apply {
+                text = dayNum.toString()
+                textSize = 15f
+                gravity = android.view.Gravity.CENTER
+                typeface = android.graphics.Typeface.DEFAULT_BOLD
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { topMargin = 4 }
+
+                if (isToday) {
+                    setBackgroundResource(R.drawable.today_circle)
+                    setTextColor(android.graphics.Color.parseColor("#4CAF82"))
+                } else {
+                    setTextColor(android.graphics.Color.WHITE)
+                }
+            }
+
+            dayView.addView(dayNameView)
+            dayView.addView(dayNumView)
+            binding.llWeekDays.addView(dayView)
+        }
+    }
+
     private fun setupSubjectChips(subjects: List<Subject>) {
         binding.chipGroupSubjects.removeAllViews()
 
-        // 1. Създаваме първия главен чип "Всички"
         val allChip = Chip(requireContext()).apply {
             text = "Всички"
             isCheckable = true
@@ -119,20 +214,16 @@ class DashboardFragment : Fragment() {
         }
         binding.chipGroupSubjects.addView(allChip)
 
-        // 2. Генерираме чип за всеки предмет от базата данни
         subjects.forEach { subject ->
             val chip = Chip(requireContext()).apply {
                 text = subject.name
                 isCheckable = true
                 isChecked = selectedSubjectId == subject.id
-
-                // Правим пастелен фон на чипа на базата на неговия оригинален цвят
                 val pastelBg = ColorUtils.setAlphaComponent(subject.color, 45)
                 chipBackgroundColor = ColorStateList.valueOf(pastelBg)
                 setTextColor(ColorStateList.valueOf(subject.color))
                 chipStrokeColor = ColorStateList.valueOf(subject.color)
                 chipStrokeWidth = 2f
-
                 setOnClickListener {
                     selectedSubjectId = subject.id
                     refreshTasksList()
@@ -142,21 +233,16 @@ class DashboardFragment : Fragment() {
         }
     }
 
-    // Помощен метод, който презарежда текущия списък със задачи според филтъра
     private fun refreshTasksList() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            taskViewModel.pendingTasks.collect { tasks ->
-                filterAndSubmitTasks(tasks)
-            }
-        }
+        val tasks = taskViewModel.pendingTasks.value
+        filterAndSubmitTasks(tasks)
     }
 
-    // Реалното филтриране на списъка
     private fun filterAndSubmitTasks(tasks: List<com.example.uniplanner.data.local.entity.Task>) {
         val filteredList = if (selectedSubjectId == null) {
-            tasks // Ако е "Всички", показваме целия списък
+            tasks
         } else {
-            tasks.filter { it.subjectId == selectedSubjectId } // Иначе филтрираме по ID
+            tasks.filter { it.subjectId == selectedSubjectId }
         }
         taskAdapter.submitList(filteredList)
     }

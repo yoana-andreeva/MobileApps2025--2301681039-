@@ -25,7 +25,10 @@
         android:id="@+id/chipGroupTheme"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="24dp">
+        android:layout_marginBottom="24dp"
+        app:singleSelection="true"
+        app:selectionRequired="true"
+        xmlns:app="http://schemas.android.com/apk/res-auto">
 
         <com.google.android.material.chip.Chip
             android:id="@+id/chipLight"
@@ -40,14 +43,6 @@
             android:layout_height="wrap_content"
             android:text="🌙 Тъмна"
             style="@style/Widget.Material3.Chip.Filter" />
-
-        <com.google.android.material.chip.Chip
-            android:id="@+id/chipSystem"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="⚙️ Системна"
-            style="@style/Widget.Material3.Chip.Filter"
-            android:checked="true" />
 
     </com.google.android.material.chip.ChipGroup>
 

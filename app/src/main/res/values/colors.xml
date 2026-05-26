@@ -37,6 +37,10 @@
     <color name="subject_7">#F8BBD9</color>
     <color name="subject_8">#DCEDC8</color>
 
+    <!-- Theme-aware цветове -->
+    <color name="card_completed">#E8F5EE</color>
+    <color name="card_pending">#FFF8E7</color>
+
     <!-- Bottom Nav -->
     <color name="bottom_nav_bg">#1A1A2E</color>
     <color name="bottom_nav_selected">#4CAF82</color>

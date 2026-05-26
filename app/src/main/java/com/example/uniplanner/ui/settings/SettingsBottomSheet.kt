@@ -38,21 +38,22 @@ class SettingsBottomSheet : BottomSheetDialogFragment() {
     }
 
     private fun setupThemeSelector() {
-        when (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) {
-            Configuration.UI_MODE_NIGHT_YES -> binding.chipDark.isChecked = true
-            Configuration.UI_MODE_NIGHT_NO -> binding.chipLight.isChecked = true
-            else -> binding.chipSystem.isChecked = true
+        // Покажи текущата тема
+        val isNightMode = resources.configuration.uiMode and
+                Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
+
+        if (isNightMode) {
+            binding.chipDark.isChecked = true
+        } else {
+            binding.chipLight.isChecked = true
         }
 
-        binding.chipGroupTheme.setOnCheckedStateChangeListener { _, checkedIds ->
-            when {
-                checkedIds.contains(binding.chipLight.id) ->
-                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-                checkedIds.contains(binding.chipDark.id) ->
-                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-                else ->
-                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
-            }
+        binding.chipLight.setOnClickListener {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+        }
+
+        binding.chipDark.setOnClickListener {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
         }
     }
 

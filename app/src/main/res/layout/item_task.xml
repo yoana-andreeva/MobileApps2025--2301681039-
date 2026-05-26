@@ -20,7 +20,7 @@
             android:id="@+id/priorityIndicator"
             android:layout_width="5dp"
             android:layout_height="0dp"
-            android:background="@color/primary"
+            android:background="@drawable/rounded_indicator"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent" />
@@ -44,7 +44,9 @@
                 android:textSize="15sp"
                 android:textStyle="bold"
                 android:fontFamily="@font/poppins"
-                android:textColor="@color/text_primary" />
+                android:textColor="@color/text_primary"
+                android:maxLines="1"
+                android:ellipsize="end"/>
 
             <TextView
                 android:id="@+id/tvTaskSubject"
@@ -56,15 +58,15 @@
                 android:fontFamily="@font/poppins"
                 android:textColor="@color/text_secondary" />
 
+
             <TextView
                 android:id="@+id/tvTaskDeadline"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="⏰ Днес, 23:59 ч."
                 android:textSize="11sp"
                 android:layout_marginTop="4dp"
                 android:fontFamily="@font/poppins"
-                android:textColor="@color/priority_high" />
+                android:textColor="@color/text_secondary" />
         </LinearLayout>
 
         <com.google.android.material.checkbox.MaterialCheckBox

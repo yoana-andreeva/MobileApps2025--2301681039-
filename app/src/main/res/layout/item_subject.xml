@@ -4,9 +4,13 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="8dp"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="2dp">
+    android:layout_marginVertical="6dp"
+    android:layout_marginStart="4dp"
+    android:layout_marginEnd="4dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="0dp"
+    app:strokeWidth="1dp"
+    app:strokeColor="#E8E8E8">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -17,9 +21,10 @@
 
         <View
             android:id="@+id/subjectColorIndicator"
-            android:layout_width="16dp"
-            android:layout_height="16dp"
-            android:layout_marginEnd="12dp" />
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginEnd="16dp"
+            android:background="@drawable/circle_shape" />
 
         <LinearLayout
             android:layout_width="0dp"
@@ -31,14 +36,16 @@
                 android:id="@+id/tvSubjectName"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="16sp"
-                android:textStyle="bold" />
+                android:textSize="17sp"
+                android:textStyle="bold"
+                android:textColor="?android:attr/textColorPrimary" />
 
             <TextView
                 android:id="@+id/tvSubjectTeacher"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="12sp"
+                android:textSize="13sp"
+                android:textColor="?android:attr/textColorSecondary"
                 android:layout_marginTop="4dp" />
 
         </LinearLayout>
@@ -48,6 +55,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Изтрий"
+            android:textColor="#FF6B6B"
             style="@style/Widget.Material3.Button.TextButton" />
 
     </LinearLayout>

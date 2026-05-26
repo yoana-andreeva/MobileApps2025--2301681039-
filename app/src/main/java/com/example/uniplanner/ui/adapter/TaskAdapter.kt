@@ -86,6 +86,15 @@ class TaskAdapter(
 
             // 7. Клик върху цялата карта (за преглед или редакция)
             binding.root.setOnClickListener { onTaskClicked(task) }
+
+            // Цвят на дедлайна - Червен ако е просрочен, сив иначе
+            val now = System.currentTimeMillis()
+            binding.tvTaskDeadline.setTextColor(
+                if (task.deadline < now && task.status != TaskStatus.DONE)
+                    Color.parseColor("#FF6B6B")
+                else
+                    Color.parseColor("#9095A6")
+            )
         }
     }
 

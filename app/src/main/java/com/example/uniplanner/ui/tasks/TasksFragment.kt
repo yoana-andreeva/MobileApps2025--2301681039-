@@ -116,4 +116,16 @@ class TasksFragment : Fragment() {
         super.onDestroyView()
         _binding = null
     }
+
+    private fun observeTasks() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            taskViewModel.allTasks.collect { tasks ->
+                taskAdapter.submitList(tasks)
+                binding.emptyStateTasks.visibility =
+                    if (tasks.isEmpty()) View.VISIBLE else View.GONE
+                binding.rvTasks.visibility =
+                    if (tasks.isEmpty()) View.GONE else View.VISIBLE
+            }
+        }
+    }
 }

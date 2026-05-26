@@ -24,8 +24,20 @@ class MainActivity : AppCompatActivity() {
 
         binding.bottomNav.setupWithNavController(navController)
 
-        binding.btnSettings.setOnClickListener {
-            SettingsBottomSheet().show(supportFragmentManager, SettingsBottomSheet.TAG)
+        binding.bottomNav.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.action_settings -> {
+                    SettingsBottomSheet().show(
+                        supportFragmentManager,
+                        SettingsBottomSheet.TAG
+                    )
+                    false
+                }
+                else -> {
+                    navController.navigate(item.itemId)
+                    true
+                }
+            }
         }
     }
 }
