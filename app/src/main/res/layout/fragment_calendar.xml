@@ -12,7 +12,8 @@
         android:layout_height="wrap_content"
         android:background="@color/background"
         app:mcv_dateTextAppearance="?android:attr/textAppearanceListItem"
-        app:mcv_weekDayTextAppearance="?android:attr/textAppearanceSmall" />
+        app:mcv_weekDayTextAppearance="?android:attr/textAppearanceSmall"
+        app:mcv_selectionColor="@color/secondary"/>
 
     <TextView
         android:id="@+id/tvSelectedDate"
