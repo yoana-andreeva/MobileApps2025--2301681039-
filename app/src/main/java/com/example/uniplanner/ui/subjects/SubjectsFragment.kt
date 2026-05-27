@@ -115,19 +115,16 @@ class SubjectsFragment : Fragment() {
                 setOnClickListener {
                     selectedColor = color
 
+                    // Нулираме мащаба на всички кръгчета
                     colorViews.forEachIndexed { i, v ->
                         v.scaleX = 1.0f
                         v.scaleY = 1.0f
                         v.elevation = 0f
-                        v.setBackgroundResource(R.drawable.circle_shape)
-                        v.backgroundTintList = android.content.res.ColorStateList.valueOf(colors[i])
                     }
 
-                    scaleX = 1.15f
-                    scaleY = 1.15f
-                    elevation = 8f
-                    setBackgroundResource(R.drawable.circle_selected)
-                    backgroundTintList = android.content.res.ColorStateList.valueOf(color)
+                    // Анимираме леко избраното пастелно кръгче
+                    animate().scaleX(1.2f).scaleY(1.2f).setDuration(150).start()
+                    elevation = 10f
                 }
             }
 
