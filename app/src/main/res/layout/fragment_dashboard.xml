@@ -12,13 +12,13 @@
         android:id="@+id/tvGreeting"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:fontFamily="serif"
         android:text="Здравей!"
-        android:textSize="22sp"
-        android:fontFamily="@font/poppins"
-        android:textStyle="bold"
         android:textColor="@color/text_primary"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        android:textSize="22sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
         android:id="@+id/tvSubtitle"
@@ -153,12 +153,12 @@
                 android:id="@+id/tvCalendarMonth"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:fontFamily="monospace"
                 android:text="Май 2026 ›"
                 android:textColor="@color/white"
                 android:textSize="14sp"
-                android:textStyle="bold"
-                android:fontFamily="@font/poppins"
-                android:layout_marginBottom="12dp" />
+                android:textStyle="bold" />
 
             <LinearLayout
                 android:id="@+id/llWeekDays"

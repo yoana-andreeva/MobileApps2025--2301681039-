@@ -61,7 +61,7 @@ class DashboardFragment : Fragment() {
         binding.cardCompleted.setOnClickListener {
             val done = taskViewModel.allTasks.value.filter { it.status == TaskStatus.DONE }
             taskAdapter.submitList(done)
-            binding.tvUpcomingTitle.text = "Изпълнени задачи ✅"
+            binding.tvUpcomingTitle.text = "Изпълнени задачи"
         }
 
         binding.cardPending.setOnClickListener {
@@ -196,11 +196,44 @@ class DashboardFragment : Fragment() {
                 text = subject.name
                 isCheckable = true
                 isChecked = selectedSubjectId == subject.id
+
                 val pastelBg = ColorUtils.setAlphaComponent(subject.color, 45)
-                chipBackgroundColor = ColorStateList.valueOf(pastelBg)
-                setTextColor(ColorStateList.valueOf(subject.color))
-                chipStrokeColor = ColorStateList.valueOf(subject.color)
+                val selectedBg = subject.color // Пълен цвят когато е избран
+
+                // Selector за фон
+                chipBackgroundColor = android.content.res.ColorStateList(
+                    arrayOf(
+                        intArrayOf(android.R.attr.state_checked),
+                        intArrayOf(-android.R.attr.state_checked)
+                    ),
+                    intArrayOf(selectedBg, pastelBg)
+                )
+
+                // Selector за текст
+                val darkColor = android.graphics.Color.parseColor("#1A1A2E")
+                setTextColor(
+                    android.content.res.ColorStateList(
+                        arrayOf(
+                            intArrayOf(android.R.attr.state_checked),
+                            intArrayOf(-android.R.attr.state_checked)
+                        ),
+                        intArrayOf(
+                            android.graphics.Color.WHITE, // бял текст когато е избран
+                            subject.color // цветен текст когато не е избран
+                        )
+                    )
+                )
+
+                // Контур само когато не е избран
+                chipStrokeColor = android.content.res.ColorStateList(
+                    arrayOf(
+                        intArrayOf(android.R.attr.state_checked),
+                        intArrayOf(-android.R.attr.state_checked)
+                    ),
+                    intArrayOf(subject.color, subject.color)
+                )
                 chipStrokeWidth = 2f
+
                 setOnClickListener {
                     selectedSubjectId = subject.id
                     refreshTasksList()
