@@ -28,6 +28,10 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
+
 
 @AndroidEntryPoint
 class AddEditTaskFragment : Fragment() {
@@ -57,6 +61,20 @@ class AddEditTaskFragment : Fragment() {
         }
     }
 
+    private val requestCameraPermission = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            launchCamera()
+        } else {
+            Toast.makeText(
+                requireContext(),
+                "Необходимо е разрешение за камера",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -80,6 +98,9 @@ class AddEditTaskFragment : Fragment() {
             // Create режим
             binding.tvScreenTitle.text = "Нова задача"
             binding.btnSave.text = "Създай задача"
+            binding.btnBack.setOnClickListener {
+                findNavController().navigateUp()
+            }
         }
 
         setupSubjectDropdown()
@@ -161,25 +182,38 @@ class AddEditTaskFragment : Fragment() {
 
     private fun setupCamera() {
         binding.btnPickImage.setOnClickListener {
-            try {
-                val tempFile = File.createTempFile(
-                    "task_image_", ".jpg",
-                    requireContext().cacheDir
-                )
-                photoFile = tempFile
-                photoUri = FileProvider.getUriForFile(
+            // Проверяваме дали имаме разрешение
+            if (ContextCompat.checkSelfPermission(
                     requireContext(),
-                    "${requireContext().packageName}.provider",
-                    tempFile
-                )
-                takePicture.launch(photoUri)
-            } catch (e: Exception) {
-                Toast.makeText(
-                    requireContext(),
-                    "Грешка при стартиране на камерата",
-                    Toast.LENGTH_SHORT
-                ).show()
+                    Manifest.permission.CAMERA
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                launchCamera()
+            } else {
+                requestCameraPermission.launch(Manifest.permission.CAMERA)
             }
+        }
+    }
+
+    private fun launchCamera() {
+        try {
+            val tempFile = File.createTempFile(
+                "task_image_", ".jpg",
+                requireContext().cacheDir
+            )
+            photoFile = tempFile
+            photoUri = FileProvider.getUriForFile(
+                requireContext(),
+                "${requireContext().packageName}.provider",
+                tempFile
+            )
+            takePicture.launch(photoUri)
+        } catch (e: Exception) {
+            Toast.makeText(
+                requireContext(),
+                "Грешка при стартиране на камерата",
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
 

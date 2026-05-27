@@ -1,6 +1,6 @@
 package com.example.uniplanner.ui.subjects
 
-import android.graphics.Color
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -11,13 +11,16 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.ItemTouchHelper
+import androidx.recyclerview.widget.RecyclerView
 import com.example.uniplanner.R
 import com.example.uniplanner.data.local.entity.Subject
-import com.example.uniplanner.databinding.FragmentSubjectsBinding
 import com.example.uniplanner.databinding.DialogAddSubjectBinding
+import com.example.uniplanner.databinding.FragmentSubjectsBinding
 import com.example.uniplanner.ui.adapter.SubjectAdapter
 import com.example.uniplanner.ui.viewmodel.SubjectViewModel
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -42,20 +45,52 @@ class SubjectsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         setupRecyclerView()
+        setupSwipeToDelete()
         observeSubjects()
 
-        // При натискане на FAB бутона отваряме диалога
+        // При натискане на FAB бутона отваряме диалога за добавяне
         binding.fabAddSubject.setOnClickListener {
-            showAddSubjectDialog()
+            showSubjectDialog(null)
         }
     }
 
     private fun setupRecyclerView() {
-        subjectAdapter = SubjectAdapter { subject ->
-            viewModel.deleteSubject(subject)
-            Toast.makeText(requireContext(), "Предметът беше изтрит", Toast.LENGTH_SHORT).show()
-        }
+        subjectAdapter = SubjectAdapter(
+            onEditClicked = { subject ->
+                // Отваряме диалога в режим редактиране
+                showSubjectDialog(subject)
+            },
+            onDeleteClicked = { subject ->
+                viewModel.deleteSubject(subject)
+            }
+        )
         binding.rvSubjects.adapter = subjectAdapter
+    }
+
+    // Swipe за изтриване
+    private fun setupSwipeToDelete() {
+        val swipeCallback = object : ItemTouchHelper.SimpleCallback(
+            0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
+        ) {
+            override fun onMove(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ) = false
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                val subject = subjectAdapter.currentList[viewHolder.adapterPosition]
+                viewModel.deleteSubject(subject)
+                Snackbar.make(
+                    binding.root,
+                    "\"${subject.name}\" изтрит",
+                    Snackbar.LENGTH_LONG
+                ).setAction("Отмени") {
+                    viewModel.insertSubject(subject)
+                }.show()
+            }
+        }
+        ItemTouchHelper(swipeCallback).attachToRecyclerView(binding.rvSubjects)
     }
 
     private fun observeSubjects() {
@@ -70,8 +105,16 @@ class SubjectsFragment : Fragment() {
         }
     }
 
-    private fun showAddSubjectDialog() {
+    // Един диалог за добавяне И редактиране
+    private fun showSubjectDialog(subjectToEdit: Subject?) {
         val dialogBinding = DialogAddSubjectBinding.inflate(layoutInflater)
+        val isEditing = subjectToEdit != null
+
+        // Ако редактираме — попълни съществуващите данни
+        if (isEditing) {
+            dialogBinding.etSubjectName.setText(subjectToEdit!!.name)
+            dialogBinding.etTeacher.setText(subjectToEdit.teacher)
+        }
 
         // 1. Вземаме точно твоите 8 пастелни цвята от colors.xml
         val colorResIds = listOf(
@@ -81,15 +124,14 @@ class SubjectsFragment : Fragment() {
 
         // Превръщаме ги в реални Color стойности (Int)
         val colors = colorResIds.map { ContextCompat.getColor(requireContext(), it) }
-        var selectedColor = colors[0] // По подразбиране е избран първият цвят
+        var selectedColor = subjectToEdit?.color ?: colors[0]
 
-        // Списък, в който ще пазим визуалните кръгчета, за да им махаме контура при превключване
+        // Списък, в който ще пазим визуалните кръгчета
         val colorViews = mutableListOf<View>()
 
         // 2. Програмно генериране на пастелните кръгчета в colorPicker контейнера
         colors.forEachIndexed { index, color ->
             val colorView = View(requireContext()).apply {
-                // Създаваме размери за кръгчето (36dp x 36dp)
                 val size = (36 * resources.displayMetrics.density).toInt()
                 val margin = (8 * resources.displayMetrics.density).toInt()
 
@@ -98,17 +140,14 @@ class SubjectsFragment : Fragment() {
                 }
                 this.layoutParams = layoutParams
 
-                // Задаваме му формата circle_shape, която създадохме
                 setBackgroundResource(R.drawable.circle_shape)
-                backgroundTintList = android.content.res.ColorStateList.valueOf(color)
+                backgroundTintList = ColorStateList.valueOf(color)
 
-                // Ако е първият цвят, му слагаме маркер за селекция (черен контур)
-                if (index == 0) {
-                    elevation = 6f
-                    setPadding(4, 4, 4, 4)
-                    // Тъй като използваме вграден shape, за контур можем леко да променим elevation или скала
-                    scaleX = 1.1f
-                    scaleY = 1.1f
+                // Маркирай текущо избрания цвят
+                if (color == selectedColor) {
+                    scaleX = 1.2f
+                    scaleY = 1.2f
+                    elevation = 10f
                 }
 
                 // Логика при кликване върху цвят
@@ -116,7 +155,7 @@ class SubjectsFragment : Fragment() {
                     selectedColor = color
 
                     // Нулираме мащаба на всички кръгчета
-                    colorViews.forEachIndexed { i, v ->
+                    colorViews.forEach { v ->
                         v.scaleX = 1.0f
                         v.scaleY = 1.0f
                         v.elevation = 0f
@@ -129,21 +168,38 @@ class SubjectsFragment : Fragment() {
             }
 
             colorViews.add(colorView)
-            dialogBinding.colorPicker.addView(colorView) // Добавяме го в хоризонталния LinearLayout
+            dialogBinding.colorPicker.addView(colorView)
         }
 
-        // 3. Показване на самия Material 3 Диалог
+        // 3. Показване на Material 3 Диалог
         MaterialAlertDialogBuilder(requireContext())
-            .setTitle("Добавяне на предмет")
+            .setTitle(if (isEditing) "Редактирай предмет" else "Добавяне на предмет")
             .setView(dialogBinding.root)
-            .setPositiveButton("Добави") { _, _ ->
+            .setPositiveButton(if (isEditing) "Запази" else "Добави") { _, _ ->
                 val name = dialogBinding.etSubjectName.text.toString().trim()
                 val teacher = dialogBinding.etTeacher.text.toString().trim()
 
                 if (name.isNotEmpty()) {
-                    viewModel.insertSubject(Subject(name = name, teacher = teacher, color = selectedColor))
+                    if (isEditing) {
+                        // Обновяваме съществуващия предмет
+                        val updated = subjectToEdit!!.copy(
+                            name = name,
+                            teacher = teacher,
+                            color = selectedColor
+                        )
+                        viewModel.updateSubject(updated)
+                    } else {
+                        // Добавяме нов предмет
+                        viewModel.insertSubject(
+                            Subject(name = name, teacher = teacher, color = selectedColor)
+                        )
+                    }
                 } else {
-                    Toast.makeText(requireContext(), "Името на предмета е задължително!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        requireContext(),
+                        "Името на предмета е задължително!",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
             .setNegativeButton("Отказ", null)
@@ -154,5 +210,4 @@ class SubjectsFragment : Fragment() {
         super.onDestroyView()
         _binding = null
     }
-
 }

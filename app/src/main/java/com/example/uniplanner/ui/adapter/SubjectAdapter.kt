@@ -10,6 +10,7 @@ import com.example.uniplanner.data.local.entity.Subject
 import com.example.uniplanner.databinding.ItemSubjectBinding
 
 class SubjectAdapter(
+    private val onEditClicked: (Subject) -> Unit,
     private val onDeleteClicked: (Subject) -> Unit
 ) : ListAdapter<Subject, SubjectAdapter.SubjectViewHolder>(SubjectDiffCallback()) {
 
@@ -32,20 +33,20 @@ class SubjectAdapter(
             // 1. Попълваме името на предмета
             binding.tvSubjectName.text = subject.name
 
-            // 2. Попълваме името на преподавателя (Запазено твое ID: tvSubjectTeacher)
-            // Използваме твоята променлива от Entity класа ти (напр. subject.teacher)
+            // 2. Попълваме името на преподавателя
             binding.tvSubjectTeacher.text = if (!subject.teacher.isNullOrEmpty()) {
                 "Преподавател: ${subject.teacher}"
             } else {
                 "Няма посочен преподавател"
             }
 
-            // 3. Динамично оцветяваме кръгчето с пастелния цвят от базата (Запазено твое ID: subjectColorIndicator)
-            binding.subjectColorIndicator.backgroundTintList = ColorStateList.valueOf(subject.color)
+            // 3. Динамично оцветяваме кръгчето
+            binding.subjectColorIndicator.backgroundTintList =
+                ColorStateList.valueOf(subject.color)
 
-            // 4. Слушател за текстовия бутон за изтриване (Запазено твое ID: btnDeleteSubject)
-            binding.btnDeleteSubject.setOnClickListener {
-                onDeleteClicked(subject)
+            // 4. Слушател за иконката за редактиране
+            binding.btnEditSubject.setOnClickListener {
+                onEditClicked(subject)
             }
         }
     }
