@@ -89,6 +89,12 @@ class AddEditTaskFragment : Fragment() {
 
         taskToEdit = arguments?.getLong("taskId", -1L) ?: -1L
 
+        // 1. Бутонът за връщане вече е активен и в двата режима
+        binding.btnBack.setOnClickListener {
+            findNavController().navigateUp()
+        }
+
+        // 2. Проверка за режима на работа
         if (taskToEdit != -1L) {
             // Edit режим
             binding.tvScreenTitle.text = "Редактирай задача"
@@ -98,9 +104,6 @@ class AddEditTaskFragment : Fragment() {
             // Create режим
             binding.tvScreenTitle.text = "Нова задача"
             binding.btnSave.text = "Създай задача"
-            binding.btnBack.setOnClickListener {
-                findNavController().navigateUp()
-            }
         }
 
         setupSubjectDropdown()
