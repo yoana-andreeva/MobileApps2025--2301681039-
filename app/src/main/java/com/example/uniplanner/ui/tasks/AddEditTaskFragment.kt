@@ -89,7 +89,7 @@ class AddEditTaskFragment : Fragment() {
 
         taskToEdit = arguments?.getLong("taskId", -1L) ?: -1L
 
-        // 1. Бутонът за връщане вече е активен и в двата режима
+        // 1. Бутонът за връщане е активен и в двата режима
         binding.btnBack.setOnClickListener {
             findNavController().navigateUp()
         }
