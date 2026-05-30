@@ -3,8 +3,10 @@ package com.example.uniplanner
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.matcher.ViewMatchers.hasErrorText
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withId
+import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import dagger.hilt.android.testing.HiltAndroidRule
@@ -38,49 +40,49 @@ class MainActivityTest {
 
     @Test
     fun bottomNavigationWorking() {
-        // Кликаме върху бутона "Tasks" в долното заоблено меню
-        onView(withId(R.id.tasksFragment))
-            .perform(click())
+        // Клик върху таба за задачи в Bottom Navigation
+        onView(withId(R.id.tasksFragment)).perform(click())
 
-        // Проверяваме дали списъкът с всички задачи (rvTasks) се визуализира успешно
-        onView(withId(R.id.rvTasks))
+        // Проверяваме дали се вижда Empty State съобщението, тъй като базата е празна
+        onView(withId(R.id.emptyStateTasks))
             .check(matches(isDisplayed()))
     }
 
     @Test
     fun fabOpensAddTaskScreen() {
-        // Кликаме върху FAB бутона за нова задача на Dashboard-а
-        onView(withId(R.id.fabAddTask))
-            .perform(click())
+        // Отиваме на екрана със задачите
+        onView(withId(R.id.tasksFragment)).perform(click())
 
-        // Проверяваме дали се отваря екранът за добавяне, като търсим полето за Заглавие
-        onView(withId(R.id.etTitle))
-            .check(matches(isDisplayed()))
+        // Клик върху FAB бутона за добавяне на задача
+        onView(withId(R.id.fabAddTask)).perform(click())
+
+        // Проверяваме дали успешно сме навигирали до екрана за създаване
+        onView(withId(R.id.tvScreenTitle))
+            .check(matches(withText("Нова задача")))
     }
 
     @Test
     fun addTaskWithEmptyTitleShowsError() {
-        // Отваряме екрана за добавяне на задача
-        onView(withId(R.id.fabAddTask))
-            .perform(click())
+        // 1. Отиваме на екрана със задачите
+        onView(withId(R.id.tasksFragment)).perform(click())
 
-        // Директно натискаме бутона "Запази" (btnSave) без да пишем нищо
-        onView(withId(R.id.btnSave))
-            .perform(click())
+        // 2. Клик върху FAB бутона за добавяне на задача
+        onView(withId(R.id.fabAddTask)).perform(click())
 
-        // Тъй като полето показва грешка, то си остава на екрана. Проверяваме дали все още е видимо.
-        onView(withId(R.id.etTitle))
-            .check(matches(isDisplayed()))
+        // 3. Оставяме заглавието празно и директно натискаме бутона "Създай задача"
+        onView(withId(R.id.btnSave)).perform(click())
+
+        // 4. Проверяваме дали TextInputLayout или TextInputEditText показва съответната грешка
+        onView(withId(R.id.etTitle)).check(matches(hasErrorText("Заглавието е задължително")))
     }
 
     @Test
     fun navigateToCalendarTab() {
-        // Кликаме върху таба за Календар в BottomNavigationView
-        onView(withId(R.id.calendarFragment))
-            .perform(click())
+        // 1. Клик върху картата на седмичния календар в DashboardFragment
+        onView(withId(R.id.cardCalendarStrip)).perform(click())
 
-        // Проверяваме дали MaterialCalendarView компонентата се показва успешно на екрана
-        onView(withId(R.id.calendarView))
-            .check(matches(isDisplayed()))
+        // 2. Проверяваме дали успешно сме отишли в CalendarFragment,
+        // като потвърждаваме, че неговият RecyclerView (rvDayTasks) е зареден на екрана
+        onView(withId(R.id.rvDayTasks)).check(matches(isDisplayed()))
     }
 }
