@@ -114,6 +114,7 @@ class SubjectsFragment : Fragment() {
         if (isEditing) {
             dialogBinding.etSubjectName.setText(subjectToEdit!!.name)
             dialogBinding.etTeacher.setText(subjectToEdit.teacher)
+            dialogBinding.etRoom.setText(subjectToEdit.room)
         }
 
         // 1. Вземаме точно твоите 8 пастелни цвята от colors.xml
@@ -185,13 +186,19 @@ class SubjectsFragment : Fragment() {
                         val updated = subjectToEdit!!.copy(
                             name = name,
                             teacher = teacher,
-                            color = selectedColor
+                            color = selectedColor,
+                            room = dialogBinding.etRoom.text.toString().trim()
                         )
                         viewModel.updateSubject(updated)
                     } else {
                         // Добавяме нов предмет
                         viewModel.insertSubject(
-                            Subject(name = name, teacher = teacher, color = selectedColor)
+                            Subject(
+                                name = name,
+                                teacher = teacher,
+                                color = selectedColor,
+                                room = dialogBinding.etRoom.text.toString().trim()
+                            )
                         )
                     }
                 } else {

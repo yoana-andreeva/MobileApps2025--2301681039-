@@ -48,6 +48,15 @@
                 android:textColor="?android:attr/textColorSecondary"
                 android:layout_marginTop="4dp" />
 
+            <TextView
+                android:id="@+id/tvSubjectRoom"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="13sp"
+                android:textColor="?android:attr/textColorSecondary"
+                android:layout_marginTop="2dp"
+                android:visibility="gone" />
+
         </LinearLayout>
 
         <!-- Иконка за редактиране вместо бутон Изтрий -->

@@ -2,6 +2,7 @@ package com.example.uniplanner.ui.adapter
 
 import android.content.res.ColorStateList
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -38,6 +39,14 @@ class SubjectAdapter(
                 "Преподавател: ${subject.teacher}"
             } else {
                 "Няма посочен преподавател"
+            }
+
+            // Показваме залата само ако е попълнена
+            if (subject.room.isNotEmpty()) {
+                binding.tvSubjectRoom.visibility = View.VISIBLE
+                binding.tvSubjectRoom.text = "Зала: ${subject.room}"
+            } else {
+                binding.tvSubjectRoom.visibility = View.GONE
             }
 
             // 3. Динамично оцветяваме кръгчето
